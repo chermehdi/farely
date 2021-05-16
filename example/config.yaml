@@ -1,0 +1,8 @@
+# Example configuration
+services: 
+  - 
+    name: "test service"
+    replicas: 
+      - "http://127.0.0.1:8081"
+      - "http://127.0.0.1:8082"
+strategy: RoundRobin
