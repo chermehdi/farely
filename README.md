@@ -1,5 +1,7 @@
 # farely
 
+[![Go](https://github.com/chermehdi/farely/actions/workflows/go.yml/badge.svg)](https://github.com/chermehdi/farely/actions/workflows/go.yml)
+
 ![Farely load balancer](./etc/farely.png)
 
 A load balancer supporting multiple LB strategies written in Go.
