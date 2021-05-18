@@ -8,7 +8,14 @@ import (
 )
 
 type Service struct {
-	Name     string   `yaml:"name"`
+	Name string `yaml:"name"`
+
+	// A prefix matcher to select service based on the path part of the url
+	// Note(self): The matcher could be more sophisticated (i.e Regex based,
+	// subdomain based), but for the purposes of simplicity let's think about this
+	// later, and it could be a nice contribution to the project.
+	Matcher string `yaml:"matcher"`
+
 	Replicas []string `yaml:"replicas"`
 }
 
@@ -32,8 +39,11 @@ func (s *Server) Forward(res http.ResponseWriter, req *http.Request) {
 }
 
 type ServerList struct {
+	// Servers are the replicas
 	Servers []*Server
 
+	// Name of the service
+	Name string
 	// The current server to forward the request to.
 	// the next server should be (current + 1) % len(Servers)
 	current uint32
