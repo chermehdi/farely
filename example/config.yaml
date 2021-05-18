@@ -3,6 +3,7 @@ services:
   - 
     name: "test service"
     matcher:  '/'
+    strategy: "RoundRobin"
     replicas: 
       - "http://127.0.0.1:8081"
       - "http://127.0.0.1:8082"

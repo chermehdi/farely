@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/chermehdi/farely/pkg/config"
+	"github.com/chermehdi/farely/pkg/domain"
+	"github.com/chermehdi/farely/pkg/strategy"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,21 +37,22 @@ func NewFarely(conf *config.Config) *Farely {
 	serverMap := make(map[string]*config.ServerList, 0)
 
 	for _, service := range conf.Services {
-		servers := make([]*config.Server, 0)
+		servers := make([]*domain.Server, 0)
 		for _, replica := range service.Replicas {
 			ur, err := url.Parse(replica)
 			if err != nil {
 				log.Fatal(err)
 			}
 			proxy := httputil.NewSingleHostReverseProxy(ur)
-			servers = append(servers, &config.Server{
+			servers = append(servers, &domain.Server{
 				Url:   ur,
 				Proxy: proxy,
 			})
 		}
 		serverMap[service.Matcher] = &config.ServerList{
-			Servers: servers,
-			Name:    service.Name,
+			Servers:  servers,
+			Name:     service.Name,
+			Strategy: strategy.LoadStrategy(service.Strategy),
 		}
 	}
 	return &Farely{
@@ -84,10 +87,17 @@ func (f *Farely) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
-	next := sl.Next()
-	log.Infof("Forwarding to the server number='%d'", next)
-	// Forwarding the request to the proxy
-	sl.Servers[next].Forward(res, req)
+
+	next, err := sl.Strategy.Next(sl.Servers)
+
+	if err != nil {
+		log.Error(err)
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof("Forwarding to the server='%s'", next.Url.RawPath)
+	next.Forward(res, req)
 }
 
 func main() {

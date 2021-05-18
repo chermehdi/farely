@@ -11,6 +11,7 @@ services:
   - 
     name: "test service"
     matcher: "/api/v1"
+    strategy: "RoundRobin"
     replicas: 
       - "localhost:8081"
       - "localhost:8082"
@@ -30,6 +31,9 @@ strategy: RoundRobin
 	}
 	if conf.Services[0].Name != "test service" {
 		t.Errorf("Expected service name to be equal to 'test service' got '%s'", conf.Services[0].Name)
+	}
+	if conf.Services[0].Strategy != "RoundRobin" {
+		t.Errorf("Expected service name to be equal to 'RoundRobin' got '%s'", conf.Services[0].Strategy)
 	}
 	if len(conf.Services[0].Replicas) != 2 {
 		t.Errorf("Expected replica count to be 2 got '%d'", len(conf.Services[0].Replicas))

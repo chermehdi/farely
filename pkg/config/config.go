@@ -1,56 +1,28 @@
 package config
 
 import (
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"sync/atomic"
+	"github.com/chermehdi/farely/pkg/domain"
+	"github.com/chermehdi/farely/pkg/strategy"
 )
-
-type Service struct {
-	Name string `yaml:"name"`
-
-	// A prefix matcher to select service based on the path part of the url
-	// Note(self): The matcher could be more sophisticated (i.e Regex based,
-	// subdomain based), but for the purposes of simplicity let's think about this
-	// later, and it could be a nice contribution to the project.
-	Matcher string `yaml:"matcher"`
-
-	Replicas []string `yaml:"replicas"`
-}
 
 // Config is a representation of the configuration
 // given to farely from a config source.
 type Config struct {
-	Services []Service `yaml:"services"`
+	Services []domain.Service `yaml:"services"`
 
+	// TODO(chermehdi): remove this.
 	// Name of the strategy to be used in load balancing between instances
 	Strategy string `yaml:"strategy"`
 }
 
-// Server is an instance of a running server
-type Server struct {
-	Url   *url.URL
-	Proxy *httputil.ReverseProxy
-}
-
-func (s *Server) Forward(res http.ResponseWriter, req *http.Request) {
-	s.Proxy.ServeHTTP(res, req)
-}
-
 type ServerList struct {
 	// Servers are the replicas
-	Servers []*Server
+	Servers []*domain.Server
 
 	// Name of the service
 	Name string
-	// The current server to forward the request to.
-	// the next server should be (current + 1) % len(Servers)
-	current uint32
-}
 
-func (sl *ServerList) Next() uint32 {
-	nxt := atomic.AddUint32(&sl.current, uint32(1))
-	lenS := uint32(len(sl.Servers))
-	return nxt % lenS
+	// Strategy defines how the server list is load balanced.
+	// It can never be 'nil', it should always default to a 'RoundRobin' version.
+	Strategy strategy.BalancingStrategy
 }
