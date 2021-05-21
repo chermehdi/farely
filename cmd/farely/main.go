@@ -39,7 +39,7 @@ func NewFarely(conf *config.Config) *Farely {
 	for _, service := range conf.Services {
 		servers := make([]*domain.Server, 0)
 		for _, replica := range service.Replicas {
-			ur, err := url.Parse(replica)
+			ur, err := url.Parse(replica.Url)
 			if err != nil {
 				log.Fatal(err)
 			}
