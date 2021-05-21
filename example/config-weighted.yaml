@@ -1,0 +1,14 @@
+# This example shows how to configure load balancing for when 
+# replicas don't offer the same load balancing capability (usually this is
+# a result of difference in compute power)
+services:
+- name: service1
+  strategy: WeightedRoundRobin
+  matcher: "/"
+  replicas:
+  - url: http://127.0.0.1:8081
+    metadata:
+      weight: 10
+  - url: http://127.0.0.1:8082
+    metadata:
+      weight: 5

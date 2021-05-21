@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/chermehdi/farely/pkg/domain"
+	"github.com/chermehdi/farely/pkg/health"
 	"github.com/chermehdi/farely/pkg/strategy"
 )
 
@@ -25,4 +26,7 @@ type ServerList struct {
 	// Strategy defines how the server list is load balanced.
 	// It can never be 'nil', it should always default to a 'RoundRobin' version.
 	Strategy strategy.BalancingStrategy
+
+	// Health checker for the servers
+	Hc *health.HealthChecker
 }

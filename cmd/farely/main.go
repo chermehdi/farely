@@ -11,6 +11,7 @@ import (
 
 	"github.com/chermehdi/farely/pkg/config"
 	"github.com/chermehdi/farely/pkg/domain"
+	"github.com/chermehdi/farely/pkg/health"
 	"github.com/chermehdi/farely/pkg/strategy"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,21 +40,31 @@ func NewFarely(conf *config.Config) *Farely {
 	for _, service := range conf.Services {
 		servers := make([]*domain.Server, 0)
 		for _, replica := range service.Replicas {
-			ur, err := url.Parse(replica)
+			ur, err := url.Parse(replica.Url)
 			if err != nil {
 				log.Fatal(err)
 			}
 			proxy := httputil.NewSingleHostReverseProxy(ur)
 			servers = append(servers, &domain.Server{
-				Url:   ur,
-				Proxy: proxy,
+				Url:      ur,
+				Proxy:    proxy,
+				Metadata: replica.Metadata,
 			})
+		}
+		checker, err := health.NewChecker(nil, servers)
+		if err != nil {
+			log.Fatal(err)
 		}
 		serverMap[service.Matcher] = &config.ServerList{
 			Servers:  servers,
 			Name:     service.Name,
 			Strategy: strategy.LoadStrategy(service.Strategy),
+			Hc:       checker,
 		}
+	}
+	// start all the health checkers for all provided matchers
+	for _, sl := range serverMap {
+		go sl.Hc.Start()
 	}
 	return &Farely{
 		Config:     conf,
@@ -96,7 +107,7 @@ func (f *Farely) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Infof("Forwarding to the server='%s'", next.Url.RawPath)
+	log.Infof("Forwarding to the server='%s'", next.Url.Host)
 	next.Forward(res, req)
 }
 
