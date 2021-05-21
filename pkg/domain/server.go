@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 type Replica struct {
@@ -42,6 +43,9 @@ type Server struct {
 	Url      *url.URL
 	Proxy    *httputil.ReverseProxy
 	Metadata map[string]string
+
+	mu    sync.RWMutex
+	alive bool
 }
 
 func (s *Server) Forward(res http.ResponseWriter, req *http.Request) {
@@ -67,4 +71,21 @@ func (s *Server) GetMetaOrDefaultInt(key string, def int) int {
 		return def
 	}
 	return a
+}
+
+// SetLiveness will change the current alive field value, and return the old
+// value.
+func (s *Server) SetLiveness(value bool) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	old := s.alive
+	s.alive = value
+	return old
+}
+
+// IsAlive reports the liveness state of the server
+func (s *Server) IsAlive() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.alive
 }
