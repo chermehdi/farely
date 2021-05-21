@@ -45,8 +45,9 @@ func NewFarely(conf *config.Config) *Farely {
 			}
 			proxy := httputil.NewSingleHostReverseProxy(ur)
 			servers = append(servers, &domain.Server{
-				Url:   ur,
-				Proxy: proxy,
+				Url:      ur,
+				Proxy:    proxy,
+				Metadata: replica.Metadata,
 			})
 		}
 		serverMap[service.Matcher] = &config.ServerList{
@@ -96,7 +97,7 @@ func (f *Farely) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Infof("Forwarding to the server='%s'", next.Url.RawPath)
+	log.Infof("Forwarding to the server='%s'", next.Url.Host)
 	next.Forward(res, req)
 }
 
